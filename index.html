@@ -1,0 +1,17 @@
+<!doctype html><html lang="ru"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Погода</title><style>
+*{box-sizing:border-box}body{margin:0;min-height:100vh;background:#e8edef;color:#26323b;font:13px system-ui,sans-serif;display:grid;place-items:center}main{width:280px;margin:40px 20px}.bubble{border-radius:18px 18px 18px 5px;overflow:hidden;background:#fff;box-shadow:0 1px 2px #14232b0b}iframe{display:block;border:0;width:100%;height:226px}details{margin-top:20px;color:#78858d;font-size:11px}summary{cursor:pointer;text-align:center;list-style:none}summary::-webkit-details-marker{display:none}form{display:flex;gap:6px;margin-top:14px}input,button{min-width:0;font:12px system-ui,sans-serif;padding:9px 10px;border:1px solid #cbd4d9;border-radius:8px;color:#354650;background:#f7f9fa}input{flex:1;width:100%}button{cursor:pointer}#demo{margin-top:8px}#notice{line-height:1.5;margin:10px 0 0}details[open] summary{color:#354650}
+</style>
+<main>
+  <div class="bubble"><iframe id="frame" title="Погодный виджет"></iframe></div>
+  <details id="settings">
+    <summary>Выбрать город</summary>
+    <form id="form">
+      <input id="city" value="Москва" aria-label="Город" maxlength="80" required>
+      <button>Показать</button>
+    </form>
+    <button id="demo" type="button">Демо</button>
+  </details>
+  <p id="notice" role="status" hidden></p>
+</main>
+<script type="module" src="./pages.mjs"></script>
+</html>

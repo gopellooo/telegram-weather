@@ -1,0 +1,25 @@
+<!doctype html><html lang="ru"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><style>
+*{box-sizing:border-box}body{margin:0;padding:0;background:var(--tg-theme-bg-color,#fff);color:var(--tg-theme-text-color,#222c34);font:14px system-ui,sans-serif}.card{padding:18px 20px max(18px,env(safe-area-inset-bottom))}.top,.weather,.bottom{display:flex;align-items:center;justify-content:space-between;gap:12px}.city{font-size:14px;font-weight:500;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.muted{color:var(--tg-theme-hint-color,#7d878e)}button{display:flex;align-items:center;justify-content:center;flex-shrink:0;border:0;background:transparent;color:var(--tg-theme-hint-color,#7d878e);width:32px;height:32px;padding:4px;border-radius:50%;cursor:pointer;font:22px system-ui,sans-serif}button:active{background:var(--tg-theme-secondary-bg-color,#f0f2f4)}button:disabled{opacity:.4;cursor:default}.weather{margin:8px 0 10px}.temp{font-size:58px;font-weight:400;line-height:1.1;letter-spacing:-3px}.icon{width:48px;height:48px;margin-right:6px;color:var(--tg-theme-text-color,#222c34)}.desc{font-size:14px;margin-bottom:4px}.feel{font-size:12px}.bottom{margin-top:18px;font-size:10px;line-height:1.4}a{color:var(--tg-theme-hint-color,#7d878e);text-decoration:none}#status{display:none;font-size:11px;line-height:1.5;margin-top:10px;color:var(--tg-theme-hint-color,#7d878e)}@media(max-width:240px){.card{padding:14px 20px}.temp{font-size:50px}.icon{width:38px;height:38px}}
+</style><body><div class="card"><div class="top"><div id="city" class="city">Погода</div><button id="refresh" aria-label="Обновить погоду" title="Обновить погоду">↻</button></div><div class="weather"><div id="temp" class="temp">—°</div><svg class="icon" viewBox="0 0 48 48" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path id="shape" d="M13 34h23a7 7 0 0 0 0-14h-1a11 11 0 0 0-21-2 8 8 0 0 0-1 16Z"/></svg></div><div id="desc" class="desc">Нет данных</div><div id="feel" class="feel muted">Ощущается как —°</div><div class="bottom muted"><a href="https://open-meteo.com/">Open-Meteo</a><span id="stamp">—</span></div><div id="status" role="status"></div></div><script>
+(function(){
+var tw=window.TelegramWidget,state=null,busy=false;
+var $=function(id){return document.getElementById(id)};
+var cloud='M13 34h23a7 7 0 0 0 0-14h-1a11 11 0 0 0-21-2 8 8 0 0 0-1 16Z';
+function temp(n){return Number.isFinite(n)?n+'°':'—°'}
+function weather(c,day){
+if(c===0)return day===0?['Ясная ночь','M34 32A16 16 0 0 1 16 10a16 16 0 1 0 18 22Z']:['Ясно','M24 15a9 9 0 1 0 0 18 9 9 0 0 0 0-18ZM24 4v5m0 30v5M4 24h5m30 0h5M10 10l4 4m20 20 4 4M38 10l-4 4M14 34l-4 4'];
+if(c<=3)return['Облачно',cloud];if(c<=48)return['Туман','M8 17h32M12 24h24M8 31h32'];
+if(c<=67||c>=80&&c<=82)return[c>=80?'Ливень':'Дождь',cloud+'M17 39l-2 4m11-4-2 4m11-4-2 4'];
+if(c<=86)return['Снег','M24 6v36M8 15l32 18M8 33l32-18M19 10l5 5 5-5M19 38l5-5 5 5M9 21l7-2-1-7M39 27l-7 2 1 7M9 27l7 2-1 7M39 21l-7-2 1-7'];
+return['Гроза',cloud+'M25 29l-6 9h7l-4 8'];
+}
+function render(){if(!state)return;var d=state,w=weather(d.code,d.day);$('city').textContent=d.city||'Погода';$('temp').textContent=temp(d.t);$('desc').textContent=w[0];$('shape').setAttribute('d',w[1]);$('feel').textContent='Ощущается как '+temp(d.f);$('stamp').textContent=d.time.slice(8,10)+'.'+d.time.slice(5,7)+' · '+d.time.slice(11,16)}
+function apply(raw){try{var next=typeof raw==='string'?JSON.parse(raw):raw;if(!next||!Number.isFinite(next.t)||!Number.isFinite(next.code)||typeof next.time!=='string')return false;if(state&&next.rev<state.rev)return true;state=Object.assign({},state||{},next);render();return true}catch(e){return false}}
+function read(){if(tw){apply(tw.publicData);apply(tw.chatData)}}
+function status(text){$('status').textContent=text;$('status').style.display=text?'block':'none'}
+function refresh(){if(busy||!state)return;if(!tw||typeof tw.request!=='function'){status('Обновление доступно у бота.');return}busy=true;$('refresh').disabled=true;status('Обновляем…');try{var promise=tw.request('w:'+state.lat+':'+state.lon);Promise.resolve(promise).then(function(a){if(!a||!apply(a.result))throw Error('INVALID_ANSWER');status('')}).catch(fail).finally(done)}catch(e){fail(e);done()}}
+function fail(e){var errors={NOT_ALLOWED:'Обновление недоступно. Откройте карточку у бота.',RATE_LIMITED:'Попробуйте немного позже.',TIMEOUT:'Бот не ответил. Повторите попытку.',BUSY:'Уже обновляем.',INVALID_ANSWER:'Не удалось получить погоду.'};status(errors[e.code||e.message]||'Нет связи. Показан предыдущий прогноз.')}
+function done(){busy=false;$('refresh').disabled=false}
+$('refresh').addEventListener('click',refresh);read();if(tw){tw.onEvent('publicDataChanged',read);tw.onEvent('chatDataChanged',read);if(typeof tw.ready==='function')tw.ready()}if(!state)status('Выберите город: /weather название.');
+})();
+</script></body></html>
