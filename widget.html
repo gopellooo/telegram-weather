@@ -15,7 +15,13 @@ return['Гроза',cloud+'M25 29l-6 9h7l-4 8'];
 }
 function render(){if(!state)return;var d=state,w=weather(d.code,d.day);$('city').textContent=d.city||'Погода';$('temp').textContent=temp(d.t);$('desc').textContent=w[0];$('shape').setAttribute('d',w[1]);$('feel').textContent='Ощущается как '+temp(d.f);$('stamp').textContent=d.time.slice(8,10)+'.'+d.time.slice(5,7)+' · '+d.time.slice(11,16)}
 function apply(raw){try{var next=typeof raw==='string'?JSON.parse(raw):raw;if(!next||!Number.isFinite(next.t)||!Number.isFinite(next.code)||typeof next.time!=='string')return false;if(state&&next.rev<state.rev)return true;state=Object.assign({},state||{},next);render();return true}catch(e){return false}}
-function read(){if(tw){apply(tw.publicData);apply(tw.chatData)}}
+function read(){
+  if(!tw)return;
+  var hadWeather=Boolean(state);
+  apply(tw.publicData);
+  apply(tw.chatData);
+  if(!hadWeather&&state)status('');
+}
 function status(text){$('status').textContent=text;$('status').style.display=text?'block':'none'}
 function refresh(){if(busy||!state)return;if(!tw||typeof tw.request!=='function'){status('Обновление доступно у бота.');return}busy=true;$('refresh').disabled=true;status('Обновляем…');try{var promise=tw.request('w:'+state.lat+':'+state.lon);Promise.resolve(promise).then(function(a){if(!a||!apply(a.result))throw Error('INVALID_ANSWER');status('')}).catch(fail).finally(done)}catch(e){fail(e);done()}}
 function fail(e){var errors={NOT_ALLOWED:'Обновление недоступно. Откройте карточку у бота.',RATE_LIMITED:'Попробуйте немного позже.',TIMEOUT:'Бот не ответил. Повторите попытку.',BUSY:'Уже обновляем.',INVALID_ANSWER:'Не удалось получить погоду.'};status(errors[e.code||e.message]||'Нет связи. Показан предыдущий прогноз.')}
